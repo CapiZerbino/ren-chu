@@ -13,15 +13,15 @@ const modes: { value: ContentMode; label: string }[] = [
   { value: 'letters', label: 'Chữ cái · chữ số' },
   { value: 'text', label: 'Vần · từ · câu' },
 ]
-const cases: { value: LetterCase; label: string }[] = [
+const cases: { value: LetterCase; label: string; title?: string }[] = [
   { value: 'thuong', label: 'Thường' },
   { value: 'hoa', label: 'Hoa' },
-  { value: 'ca-hai', label: 'Hoa + thường' },
+  { value: 'ca-hai', label: 'Cả hai', title: 'Mỗi chữ luyện cả chữ hoa và chữ thường' },
 ]
 const patterns: { value: PracticePattern; label: string; title: string }[] = [
-  { value: 'giam-dan', label: 'Mờ giảm dần', title: 'Dòng đầu tô kín, các dòng sau chữ mờ ít dần' },
-  { value: 'to-kin', label: 'Tô kín dòng', title: 'Dòng nào cũng có chữ mẫu và chữ mờ kín dòng' },
-  { value: 'mau-dau-dong', label: 'Mẫu đầu dòng', title: 'Chỉ có chữ mẫu đầu dòng, còn lại để trống tự viết' },
+  { value: 'giam-dan', label: 'Giảm dần', title: 'Dòng đầu tô kín, các dòng sau chữ mờ ít dần' },
+  { value: 'to-kin', label: 'Tô kín', title: 'Dòng nào cũng có chữ mẫu và chữ mờ kín dòng' },
+  { value: 'mau-dau-dong', label: 'Tự viết', title: 'Chỉ có chữ mẫu đầu dòng, còn lại để trống tự viết' },
 ]
 
 const VOWELS = ['a', 'ă', 'â', 'e', 'ê', 'i', 'o', 'ô', 'ơ', 'u', 'ư', 'y']
@@ -44,7 +44,7 @@ function applyPreset(i: number) {
 </script>
 
 <template>
-  <SettingsSection title="Nội dung">
+  <SettingsSection>
     <SegmentedControl v-model="settings.mode" :options="modes" />
 
     <template v-if="settings.mode === 'letters'">

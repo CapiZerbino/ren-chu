@@ -13,6 +13,8 @@ export type PracticePattern = 'to-kin' | 'giam-dan' | 'mau-dau-dong'
 export type TraceStyle = 'mo' | 'net-dut' | 'cham'
 /** Cỡ chữ theo mẫu chữ tiểu học: vừa = chữ thường cao 2 ô li, nhỏ = 1 ô li */
 export type LetterSize = 'vua' | 'nho'
+/** Kiểu dòng kẻ: ô li (kẻ ngang từng ô li, kẻ dọc mỗi 4 ô li) hoặc ô vuông (kẻ cả ngang lẫn dọc từng ô li) */
+export type RulingStyle = 'o-li' | 'o-vuong'
 
 export interface WorksheetSettings {
   // Nội dung
@@ -28,6 +30,7 @@ export interface WorksheetSettings {
   landscape: boolean
   marginMm: number
   oLiMm: number
+  ruling: RulingStyle
   skipRow: boolean
   verticalLines: boolean
   marginLine: boolean
@@ -58,6 +61,7 @@ export const DEFAULT_SETTINGS: WorksheetSettings = {
   landscape: false,
   marginMm: 12,
   oLiMm: 2,
+  ruling: 'o-li',
   skipRow: true,
   verticalLines: true,
   marginLine: true,

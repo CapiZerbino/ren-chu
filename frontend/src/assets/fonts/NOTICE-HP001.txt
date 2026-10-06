@@ -1,0 +1,23 @@
+HP001 Rèn Chữ (HP001-RenChu-Regular.ttf, HP001-RenChu-Bold.ttf)
+
+Bản sửa đổi của font HP001 4 hàng (normal, bold) do HP Design VN thiết kế
+(hpdesignvn.com). Mọi quyền đối với nét chữ gốc thuộc về tác giả HP001.
+
+Thay đổi của Rèn Chữ:
+- Thêm OpenType GSUB (calt), dùng các glyph có sẵn trong HP001 khi gõ chữ Unicode bình thường —
+  không cần công cụ chuyển mã:
+  · chữ ghép phụ âm đôi ch, kh, nh, gh, ph, th và chữ ghép o/ô/ơ (oi, ôi, ơi, oa, oă, on, om, op,
+    ot, oc, ơu… kèm dấu thanh);
+  · e, ê đứng sau một chữ khác dùng dạng có thanh ngang bắt đầu ở giữa thân, nối thẳng với nét ra;
+  · b, v đứng trước e, ê, a, o… dùng dạng nét ra thấp chảy vào chữ sau; i, u, ư, y đứng sau b, v dùng
+    dạng bắt đầu từ đỉnh nét sổ để nét móc trên cao của b, v nối vào.
+- Bỏ ánh xạ F f J j W w Z z (HP001 đặt các kiểu chữ khác vào đó); Rèn Chữ lấy các chữ này từ font dự phòng.
+- Thêm OpenType GPOS (kern): đặt chữ sau theo đầu nét ra của chữ trước (đầu nét ra trùng mép nét
+  chữ sau ở cùng độ cao); chữ không có nét ra ở mép phải (s, chữ hoa B, C, D, O, T…) thì kéo sát
+  cho nét ăn vào nhau.
+- Nới bề rộng chữ hoa N, V, S, P cho hết nét lượn trên cao (trước đây nét lượn đè lên chữ sau,
+  trông như dấu sắc: "Nam" thành "Nám").
+- Đổi tên họ font thành "HP001 Rèn Chữ", cập nhật chuỗi phiên bản và ghi chú.
+- Không đổi hình dạng nét chữ nào.
+
+Cách dựng lại: xem fonts-src/hp001/README.md.

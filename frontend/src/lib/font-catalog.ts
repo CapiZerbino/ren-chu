@@ -1,5 +1,7 @@
 // Danh mục font chữ mẫu: font kèm sẵn (giấy phép OFL, đủ dấu tiếng Việt), font cài
 // trên máy và font người dùng tự thêm. Font kèm sẵn chỉ tải khi được chọn.
+import hp001 from '@/assets/fonts/HP001-RenChu-Regular.ttf?url'
+import hp001Bold from '@/assets/fonts/HP001-RenChu-Bold.ttf?url'
 import playwrite from '@/assets/fonts/PlaywriteVN.ttf?url'
 import dancing from '@/assets/fonts/DancingScript.ttf?url'
 import charm from '@/assets/fonts/Charm-Regular.ttf?url'
@@ -37,11 +39,14 @@ export interface FontEntry {
   weights?: Record<WeightLevel, number>
 }
 
-export const DEFAULT_FONT_KEY = 'playwrite'
+export const DEFAULT_FONT_KEY = 'hp001'
 /** Font mặc định cho tiêu đề, ô thông tin, số trang */
 export const LABEL_FONT_KEY = 'bevietnam'
 
 export const BUNDLED_FONTS: FontEntry[] = [
+  // HP001 (HP Design VN) đã thêm quy tắc tự nối nét — xem assets/fonts/NOTICE-HP001.txt
+  { key: 'hp001', name: 'HP001 Rèn Chữ', group: 'noi-net', hint: 'Mẫu chữ tiểu học HP001, tự nối nét', url: hp001 },
+  { key: 'hp001-dam', name: 'HP001 Rèn Chữ đậm', group: 'noi-net', hint: 'HP001 nét đậm', url: hp001Bold },
   { key: 'playwrite', name: 'Playwrite Việt Nam', group: 'noi-net', hint: 'Giống mẫu chữ trường tiểu học', url: playwrite, weights: { manh: 200, vua: 300, dam: 400 } },
   { key: 'dancing', name: 'Dancing Script', group: 'noi-net', hint: 'Nét nối mềm, bay bướm', url: dancing, weights: { manh: 400, vua: 500, dam: 700 } },
   { key: 'charm', name: 'Charm', group: 'noi-net', hint: 'Chữ nghiêng kiểu bút máy', url: charm },

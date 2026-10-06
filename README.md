@@ -14,9 +14,13 @@ Cùng stack với [Sano](https://github.com/CapiZerbino/sano-sach-noi): Wails v2
   (mỗi dòng một mục), có sẵn mẫu vần, từ ngữ, tục ngữ, ca dao, câu ứng dụng lớp 1. Câu dài tự ngắt dòng.
 - **Kiểu bài**: mờ giảm dần · tô kín dòng · chỉ mẫu đầu dòng; chọn số dòng luyện mỗi chữ/câu.
 - **Khổ giấy**: A4, vở học sinh 170×240, B5, A5, Letter; dọc/ngang; lề trang.
-- **Dòng kẻ vở 4 ô li**: ô li 2 / 2,5 / 3 mm, kẻ dọc ô vuông, lề đỏ, viết cách dòng; màu tím vở, xanh, xám (in trắng đen), rất nhạt.
-- **Font chữ mẫu**: 12 font kèm sẵn, đủ dấu tiếng Việt (giấy phép OFL):
-  - Viết tay nét nối: Playwrite Việt Nam (giống mẫu chữ trường học), Dancing Script, Charm
+- **Dòng kẻ**: vở 4 ô li (kẻ ngang từng ô li, kẻ dọc mỗi ô vuông lớn) hoặc ô vuông (kẻ cả ngang lẫn dọc từng ô li như vở ô li lớp 1);
+  ô li 2 / 2,5 / 3 mm, lề đỏ, viết cách dòng; màu tím vở, xanh, xám (in trắng đen), rất nhạt.
+- **Font chữ mẫu**: 15 font kèm sẵn, đủ dấu tiếng Việt:
+  - **HP001 Rèn Chữ** (thường, đậm) — mặc định: font mẫu chữ tiểu học HP001 (HP Design VN) đã thêm quy tắc tự nối nét,
+    gõ chữ Unicode bình thường là ra đúng chữ ghép và nét nối, không cần chuyển mã (xem `fonts-src/hp001/`)
+  - Chữ nào font chữ mẫu không có (vd. f, j, w, z của HP001) được lấy từ Playwrite Việt Nam
+  - Viết tay nét nối (OFL): Playwrite Việt Nam, Dancing Script, Charm
   - Chữ in cho bé: Andika, Mali, Itim, Pangolin, Patrick Hand, Sriracha, Grandstander, Nunito, Lexend
   - Font cài trên máy (bản desktop tự quét, tìm theo tên) — dùng được font mẫu chữ tiểu học trường đang có (HP001…)
   - Thêm font từ file .ttf/.otf/.ttc (bản desktop nhớ cho lần sau). Font thiếu dấu tiếng Việt thì app cảnh báo.
@@ -38,7 +42,7 @@ Cùng stack với [Sano](https://github.com/CapiZerbino/sano-sach-noi): Wails v2
 
 | File | Vai trò |
 |---|---|
-| `font-engine.ts` | HarfBuzz (wasm) ghép chữ + lấy đường viền glyph |
+| `font-engine.ts` | HarfBuzz (wasm) ghép chữ + lấy đường viền glyph, font dự phòng cho chữ thiếu |
 | `worksheet-layout.ts` | Lưới ô li theo khổ giấy, xếp chữ vào dòng, chia trang |
 | `worksheet-svg.ts` | Vẽ lớp trang: lưới, chữ mẫu, số trang (SVG, mm) |
 | `decor-settings.ts`, `decor-svg.ts`, `decor-actions.ts` | Trang trí: tiêu đề, ô thông tin, logo, nền, watermark; vẽ + khung kéo thả |
@@ -70,4 +74,6 @@ Mở `frontend` bằng `npm run dev` cũng chạy được trong trình duyệt 
 
 ## Giấy phép font
 
-Playwrite Việt Nam, Be Vietnam Pro: SIL Open Font License (`frontend/src/assets/fonts/OFL-*.txt`).
+- Playwrite Việt Nam, Be Vietnam Pro và các font Google Fonts khác: SIL Open Font License (`frontend/src/assets/fonts/OFL-*.txt`).
+- HP001 Rèn Chữ: bản sửa của font HP001 do HP Design VN thiết kế (hpdesignvn.com); font gốc không ghi giấy phép,
+  quyền đối với nét chữ thuộc tác giả HP001 (`frontend/src/assets/fonts/NOTICE-HP001.txt`). Giấy phép MIT của repo không áp dụng cho font này.

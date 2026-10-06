@@ -9,6 +9,10 @@ export interface ShapedGlyph {
   gid: number
   x: number
   y: number
+  /** Glyph lấy từ font dự phòng (chữ mà font chính không có) */
+  font?: LoadedFont
+  /** Hệ số đổi đơn vị của font dự phòng sang đơn vị font chính (khớp chiều cao chữ x) */
+  k?: number
 }
 
 export interface ShapedRun {
@@ -32,6 +36,7 @@ export class LoadedFont {
   private weight = 0
   private paths = new Map<number, string>()
   private runs = new Map<string, ShapedRun>()
+  private fallback: LoadedFont | null = null
 
   constructor(
     readonly key: string,
@@ -60,6 +65,13 @@ export class LoadedFont {
     this.runs.clear()
   }
 
+  /** Font dùng cho chữ mà font này không có (vd. HP001 không có f, j, w, z). */
+  setFallback(font: LoadedFont | null) {
+    if (font === this) return
+    this.fallback = font
+    this.runs.clear()
+  }
+
   /** Ghép chuỗi thành dãy glyph. Chuẩn hoá NFC để "ế" gõ tổ hợp vẫn ra glyph dựng sẵn. */
   shape(text: string): ShapedRun {
     const norm = text.normalize('NFC')
@@ -72,7 +84,24 @@ export class LoadedFont {
     hb.shape(this.font, buf)
     let pen = 0
     const glyphs: ShapedGlyph[] = []
+    const chars = [...norm]
+    // chỉ số cluster (UTF-16) → ký tự, để lấy lại chữ bị thiếu glyph
+    const charAt = new Map<number, string>()
+    let off = 0
+    for (const ch of chars) {
+      charAt.set(off, ch)
+      off += ch.length
+    }
     for (const g of buf.getGlyphInfosAndPositions()) {
+      if (g.codepoint === 0 && this.fallback) {
+        // chữ font này không có → lấy từ font dự phòng, phóng cho khớp chiều cao chữ x
+        const fb = this.fallback
+        const k = this.xHeight / fb.xHeight
+        const sub = fb.shape(charAt.get(g.cluster) ?? '')
+        for (const fg of sub.glyphs) glyphs.push({ gid: fg.gid, x: pen + fg.x * k, y: fg.y * k, font: fb, k })
+        pen += sub.width * k
+        continue
+      }
       glyphs.push({ gid: g.codepoint, x: pen + (g.xOffset ?? 0), y: g.yOffset ?? 0 })
       pen += g.xAdvance ?? 0
     }

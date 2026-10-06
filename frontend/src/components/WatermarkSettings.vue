@@ -13,7 +13,7 @@ const error = ref('')
 </script>
 
 <template>
-  <SettingsSection title="Watermark">
+  <SettingsSection title="Watermark" collapsible id="watermark" :default-open="false">
     <div>
       <FieldLabel label="Chữ chìm" />
       <input

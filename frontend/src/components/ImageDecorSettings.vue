@@ -61,7 +61,7 @@ const pct = (n: number) => `${Math.round(n * 100)}%`
 </script>
 
 <template>
-  <SettingsSection title="Logo và ảnh nền">
+  <SettingsSection title="Logo và ảnh nền" collapsible id="logo-nen">
     <div>
       <FieldLabel label="Logo trường" :value="decor.logos.length ? `${decor.logos.length} logo` : ''" />
       <div class="grid grid-cols-4 gap-1.5">

@@ -62,11 +62,14 @@ export function runUses(
 ): string {
   let out = ''
   const skew = slant ? ` skewX(${f(-slant)})` : ''
+  // Hệ số phóng rất nhỏ (~0,005): giữ 6 chữ số có nghĩa, làm tròn 3 chữ số thập phân sẽ phóng sai vài %
+  const sc = Number(scale.toPrecision(6))
   for (const g of font.shape(text).glyphs) {
-    const id = defs.ref(font, g.gid, style)
+    const id = defs.ref(g.font ?? font, g.gid, style)
     const tx = x + g.x * scale
     const ty = baseline - g.y * scale
-    out += `<use href="#${id}" xlink:href="#${id}" transform="translate(${f(tx)} ${f(ty)})${skew} scale(${f(scale)} ${f(-scale)})"/>`
+    const gs = g.k ? Number((scale * g.k).toPrecision(6)) : sc
+    out += `<use href="#${id}" xlink:href="#${id}" transform="translate(${f(tx)} ${f(ty)})${skew} scale(${gs} ${-gs})"/>`
   }
   return out
 }

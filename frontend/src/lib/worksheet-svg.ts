@@ -35,7 +35,16 @@ function gridSvg(s: WorksheetSettings, g: Geometry): string {
     else thin += seg
   }
   let vert = ''
-  if (s.verticalLines) {
+  let vertMajor = ''
+  if (s.ruling === 'o-vuong') {
+    // Ô vuông: kẻ dọc từng ô li, đường mỗi 4 ô li đậm hơn (khớp dòng kẻ đậm ngang)
+    const cols = Math.round((g.gridRight - g.gridLeft) / g.oLi)
+    for (let i = 0; i <= cols; i++) {
+      const seg = `M${f(g.gridLeft + i * g.oLi)} ${f(g.gridTop)}V${f(g.gridBottom)}`
+      if (i % O_LI_PER_UNIT === 0) vertMajor += seg
+      else vert += seg
+    }
+  } else if (s.verticalLines) {
     for (let x = g.gridLeft; x <= g.gridRight + 0.01; x += g.unit) vert += `M${f(x)} ${f(g.gridTop)}V${f(g.gridBottom)}`
   } else {
     vert = `M${f(g.gridLeft)} ${f(g.gridTop)}V${f(g.gridBottom)}M${f(g.gridRight)} ${f(g.gridTop)}V${f(g.gridBottom)}`
@@ -43,6 +52,7 @@ function gridSvg(s: WorksheetSettings, g: Geometry): string {
   let out =
     `<path d="${thin}" stroke="${c.thin}" stroke-width="0.12" fill="none"/>` +
     `<path d="${vert}" stroke="${c.vertical}" stroke-width="0.12" fill="none"/>` +
+    (vertMajor ? `<path d="${vertMajor}" stroke="${c.bold}" stroke-width="0.18" stroke-opacity="0.7" fill="none"/>` : '') +
     `<path d="${bold}" stroke="${c.bold}" stroke-width="0.25" fill="none"/>`
   if (g.marginLineX !== null) {
     const x = f(g.marginLineX)

@@ -64,6 +64,16 @@ async function loadEntry(entry: FontEntry): Promise<LoadedFont> {
   throw new Error(`Font "${entry.name}" không còn trong phiên này, hãy thêm lại`)
 }
 
+/** Font dự phòng cho chữ mà font đang dùng không có (vd. HP001 không có f, j, w, z). */
+const FALLBACK_FONT_KEY = 'playwrite'
+
+function linkFallbacks() {
+  const fb = loaded.value.get(FALLBACK_FONT_KEY) ?? null
+  // nét mảnh nhất cho gần bề dày nét của các font chữ mẫu khác (vd. HP001)
+  if (fb && settings.fontKey !== FALLBACK_FONT_KEY) fb.setWeight(200)
+  for (const [key, font] of loaded.value) if (key !== FALLBACK_FONT_KEY) font.setFallback(fb)
+}
+
 /** Nạp font (một lần). Trả về false nếu không nạp được. */
 async function ensureFont(key: string): Promise<boolean> {
   if (loaded.value.has(key)) return true
@@ -73,6 +83,7 @@ async function ensureFont(key: string): Promise<boolean> {
   if (!p) {
     p = loadEntry(entry).then((font) => {
       loaded.value.set(key, font)
+      linkFallbacks()
       triggerRef(loaded)
     })
     loading.set(key, p)
@@ -112,6 +123,7 @@ export async function initFonts() {
     return
   }
   ready.value = true
+  ensureFont(FALLBACK_FONT_KEY)
   ensureUsedFonts()
   restoreAssets([...decor.logos.map((l) => l.assetId), ...(decor.background.assetId ? [decor.background.assetId] : [])])
   listSystemFonts()
@@ -135,6 +147,7 @@ export function addFontFromFile(name: string, data: string | ArrayBuffer, path?:
   const key = path ? pathFontKey(path) : `upload:${name}:${Date.now()}`
   const font = fontFromData(key, name, data)
   loaded.value.set(key, font)
+  linkFallbacks()
   triggerRef(loaded)
   if (!addedFonts.value.some((f) => f.key === key)) {
     addedFonts.value = [...addedFonts.value, { key, name, path, group: 'da-them' }]

@@ -1,18 +1,12 @@
 <script setup lang="ts">
 // Màn chính: thanh tiêu đề + bảng cài đặt bên trái + xem trước trang bên phải.
 import { computed, onMounted, ref } from 'vue'
-import { CheckCircle2, Loader2, Printer, RotateCcw, AlertTriangle } from 'lucide-vue-next'
+import { CheckCircle2, Loader2, Printer, AlertTriangle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
-import ContentSettings from '@/components/ContentSettings.vue'
-import PaperSettings from '@/components/PaperSettings.vue'
-import LetterStyleSettings from '@/components/LetterStyleSettings.vue'
 import WorksheetPreview from '@/components/WorksheetPreview.vue'
-import HeaderDecorSettings from '@/components/HeaderDecorSettings.vue'
-import ImageDecorSettings from '@/components/ImageDecorSettings.vue'
-import WatermarkSettings from '@/components/WatermarkSettings.vue'
+import SettingsSidebar from '@/components/SettingsSidebar.vue'
 import ExportMenu from '@/components/ExportMenu.vue'
 import { basePages, composePages, initFonts, titleText } from '@/lib/worksheet-store'
-import { resetSettings } from '@/lib/worksheet-settings'
 import { buildPdf } from '@/lib/pdf-export'
 import { isDesktop, openPdfForPrint, saveExport } from '@/lib/backend'
 import { buildExport, formatInfo, type ExportFormat } from '@/lib/export-formats'
@@ -96,24 +90,7 @@ async function printPdf() {
     </header>
 
     <div class="flex min-h-0 flex-1">
-      <aside class="flex w-[360px] shrink-0 flex-col border-r bg-background">
-        <div class="min-h-0 flex-1 overflow-y-auto">
-          <ContentSettings />
-          <LetterStyleSettings />
-          <PaperSettings />
-          <HeaderDecorSettings />
-          <ImageDecorSettings />
-          <WatermarkSettings />
-        </div>
-        <div class="border-t px-5 py-2.5">
-          <button
-            class="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-            @click="resetSettings"
-          >
-            <RotateCcw class="h-3.5 w-3.5" /> Về cài đặt mặc định
-          </button>
-        </div>
-      </aside>
+      <SettingsSidebar />
 
       <WorksheetPreview />
     </div>
