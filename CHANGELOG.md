@@ -1,5 +1,13 @@
 # Nhật ký thay đổi
 
+## 0.2.0
+
+- Thêm logo trường, nhiều logo một lúc; ảnh được lưu lại cho lần mở sau.
+- Kéo thả trên trang: tiêu đề, ô thông tin, logo đổi chỗ và đổi cỡ trực tiếp; nhích bằng phím mũi tên.
+- Ô thông tin tuỳ ý: thêm Trường, Điểm, Lời phê, Số báo danh… hoặc tự đặt tên, xoá ô không cần.
+- Đổi font, cỡ, màu cho tiêu đề và ô thông tin; chỉnh khoảng trống đầu trang.
+- Ảnh nền chìm dưới trang và watermark chữ (một dòng chéo hoặc lặp kín trang).
+
 ## 0.1.0
 
 Bản đầu tiên.

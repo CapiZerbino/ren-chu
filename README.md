@@ -22,7 +22,12 @@ Cùng stack với [Sano](https://github.com/CapiZerbino/sano-sach-noi): Wails v2
   - Thêm font từ file .ttf/.otf/.ttc (bản desktop nhớ cho lần sau). Font thiếu dấu tiếng Việt thì app cảnh báo.
 - **Chữ mẫu**: cỡ vừa (chữ thường 2 ô li, chữ cao 5 ô li) hoặc cỡ nhỏ (1 ô li); nét mảnh/vừa/đậm (font có trục độ đậm);
   độ nghiêng; mực xanh/đen/tím.
-- **Đầu trang**: tiêu đề, Họ và tên / Lớp / Ngày, số trang.
+- **Đầu trang**: tiêu đề, ô thông tin (Họ và tên, Lớp, Ngày, thêm Trường, Điểm, Lời phê… hoặc ô tự đặt), số trang;
+  tiêu đề và ô thông tin chọn font, cỡ, màu riêng; khoảng trống đầu trang chỉnh được.
+- **Logo trường**: thêm nhiều logo (PNG, JPG, SVG, WebP…), ảnh lưu lại cho lần mở sau.
+- **Kéo thả trên trang**: kéo tiêu đề, ô thông tin, logo để đổi chỗ; kéo góc để đổi cỡ (logo, cỡ tiêu đề, độ dài dòng chấm);
+  tiêu đề tự hít vào giữa trang; phím mũi tên nhích 0,5 mm (Shift: 2 mm), Delete xoá, Esc bỏ chọn.
+- **Ảnh nền chìm** dưới lưới ô li (phủ kín hoặc vừa trang, chỉnh độ đậm) và **watermark** chữ (font, cỡ, màu, góc, độ mờ, lặp kín trang).
 - **Xuất file**: PDF · Word (.docx, mỗi trang mẫu một trang Word cùng khổ) · ảnh PNG / JPG 300 DPI (mỗi trang một ảnh,
   có ghi DPI để in đúng cỡ) · SVG (vector, sửa tiếp bằng Canva/Illustrator). Nhiều file thì chọn thư mục, trùng tên không ghi đè.
 - **In**: mở PDF bằng trình xem của máy. Chữ vẽ bằng đường viền nên bản in giống hệt xem trước.
@@ -35,7 +40,10 @@ Cùng stack với [Sano](https://github.com/CapiZerbino/sano-sach-noi): Wails v2
 |---|---|
 | `font-engine.ts` | HarfBuzz (wasm) ghép chữ + lấy đường viền glyph |
 | `worksheet-layout.ts` | Lưới ô li theo khổ giấy, xếp chữ vào dòng, chia trang |
-| `worksheet-svg.ts` | Vẽ trang thành SVG (mm) |
+| `worksheet-svg.ts` | Vẽ lớp trang: lưới, chữ mẫu, số trang (SVG, mm) |
+| `decor-settings.ts`, `decor-svg.ts`, `decor-actions.ts` | Trang trí: tiêu đề, ô thông tin, logo, nền, watermark; vẽ + khung kéo thả |
+| `image-assets.ts` | Nhập ảnh (thu nhỏ, chuẩn hoá PNG/JPEG), lưu và nạp lại |
+| `svg-glyphs.ts` | Vẽ chữ thành `<path>`/`<use>`, bọc lớp thành trang SVG |
 | `font-catalog.ts` | Danh mục font kèm sẵn (tải khi chọn), độ đậm từng font |
 | `export-formats.ts` | Chọn định dạng xuất → danh sách file |
 | `pdf-export.ts` | SVG → PDF (jsPDF + svg2pdf.js) |
@@ -44,7 +52,8 @@ Cùng stack với [Sano](https://github.com/CapiZerbino/sano-sach-noi): Wails v2
 | `worksheet-settings.ts`, `worksheet-store.ts` | Cài đặt (nhớ lần trước) + dựng trang khi đổi |
 | `paper-presets.ts`, `vietnamese-content.ts` | Khổ giấy, màu; bảng chữ cái, nội dung mẫu |
 
-Go: `app.go` lưu file xuất (một file / cả thư mục), mở PDF để in, chọn font; `system_fonts.go` quét và đọc font cài trên máy.
+Go: `app.go` lưu file xuất (một file / cả thư mục), mở PDF để in, chọn font; `system_fonts.go` quét và đọc font cài trên máy;
+`image_assets.go` chọn ảnh, lưu ảnh logo/nền vào thư mục cấu hình của app.
 
 ## Chạy
 

@@ -3,7 +3,6 @@
 // SVG path. Trang mẫu vẽ chữ bằng path nên bản xem trước, bản PDF và bản in
 // giống hệt nhau, không phụ thuộc font cài trên máy.
 import * as hb from 'harfbuzzjs'
-import labelUrl from '@/assets/fonts/BeVietnamPro-Medium.ttf?url'
 
 /** Một glyph sau khi ghép, toạ độ theo đơn vị font (y hướng lên). */
 export interface ShapedGlyph {
@@ -25,6 +24,9 @@ export class LoadedFont {
   /** Chiều cao chữ "x" (đơn vị font) — mốc để chữ thường cao đúng số ô li */
   readonly xHeight: number
   readonly hasWeightAxis: boolean
+  /** Đỉnh và đáy chữ (đơn vị font, đáy âm) — để tính khung chữ khi kéo thả */
+  readonly ascender: number
+  readonly descender: number
   private face: hb.Face
   private font: hb.Font
   private weight = 0
@@ -44,6 +46,9 @@ export class LoadedFont {
     const gx = this.font.glyph('x'.codePointAt(0)!)
     const ext = gx ? this.font.glyphExtents(gx) : undefined
     this.xHeight = ext && ext.yBearing > 0 ? ext.yBearing : this.upem * 0.5
+    const h = this.font.hExtents()
+    this.ascender = h.ascender > 0 ? h.ascender : this.upem * 0.9
+    this.descender = h.descender < 0 ? h.descender : -this.upem * 0.25
   }
 
   /** Đổi độ đậm nét (chỉ font có trục wght). Xoá cache vì đường viền đổi theo. */
@@ -96,11 +101,6 @@ export async function fetchFontData(url: string): Promise<ArrayBuffer> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Không nạp được font (${res.status})`)
   return res.arrayBuffer()
-}
-
-/** Font chữ in cho tiêu đề, họ tên, số trang. */
-export async function loadLabelFont(): Promise<LoadedFont> {
-  return new LoadedFont('label', 'Be Vietnam Pro', await fetchFontData(labelUrl))
 }
 
 /** Dựng font từ dữ liệu (base64 từ Go hoặc ArrayBuffer). Báo lỗi nếu không có chữ Latin. */

@@ -76,3 +76,82 @@ export async function readFontFile(path: string): Promise<string> {
   if (!app) throw new Error('Chỉ đọc được font trên máy ở bản desktop')
   return app.ReadFontFile(path)
 }
+
+// ---- Ảnh (logo, ảnh nền) ----
+
+export interface PickedImage {
+  name: string
+  dataUrl: string
+}
+
+interface GoImages {
+  PickImages(title: string): Promise<PickedImage[] | null>
+  SaveAsset(id: string, dataUrl: string): Promise<void>
+  LoadAsset(id: string): Promise<string>
+  DeleteAsset(id: string): Promise<void>
+}
+
+const goImages = () => goApp() as unknown as GoImages | undefined
+const ASSET_PREFIX = 'renchu.asset.'
+
+/** Chọn một hoặc nhiều ảnh từ máy. */
+export async function pickImages(title: string, multiple: boolean): Promise<PickedImage[]> {
+  const app = goImages()
+  if (app) {
+    const list = (await app.PickImages(title)) ?? []
+    return multiple ? list : list.slice(0, 1)
+  }
+  return new Promise((resolve) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.multiple = multiple
+    input.onchange = async () => {
+      const files = [...(input.files ?? [])]
+      const out = await Promise.all(
+        files.map(
+          (file) =>
+            new Promise<PickedImage>((res, rej) => {
+              const r = new FileReader()
+              r.onload = () => res({ name: file.name.replace(/\.[^.]+$/, ''), dataUrl: r.result as string })
+              r.onerror = () => rej(r.error)
+              r.readAsDataURL(file)
+            }),
+        ),
+      )
+      resolve(out)
+    }
+    input.click()
+  })
+}
+
+/** Lưu ảnh để lần mở sau còn (desktop: thư mục cấu hình của app; trình duyệt: localStorage). */
+export async function saveAsset(id: string, dataUrl: string): Promise<void> {
+  const app = goImages()
+  if (app) return app.SaveAsset(id, dataUrl)
+  try {
+    localStorage.setItem(ASSET_PREFIX + id, dataUrl)
+  } catch {
+    /* hết chỗ lưu: ảnh vẫn dùng được trong phiên này */
+  }
+}
+
+export async function loadAsset(id: string): Promise<string> {
+  const app = goImages()
+  if (app) return app.LoadAsset(id)
+  try {
+    return localStorage.getItem(ASSET_PREFIX + id) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export async function deleteAsset(id: string): Promise<void> {
+  const app = goImages()
+  if (app) return app.DeleteAsset(id)
+  try {
+    localStorage.removeItem(ASSET_PREFIX + id)
+  } catch {
+    /* bỏ qua */
+  }
+}

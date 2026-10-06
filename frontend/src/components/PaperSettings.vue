@@ -92,20 +92,4 @@ const pick = (id: PaperId) => (settings.paper = id)
     </div>
   </SettingsSection>
 
-  <SettingsSection title="Đầu trang">
-    <div class="-my-1">
-      <ToggleRow v-model="settings.showHeader" label="Tiêu đề, họ tên, lớp, ngày" />
-      <ToggleRow v-model="settings.showPageNumber" label="Số trang" />
-    </div>
-    <div v-if="settings.showHeader">
-      <FieldLabel label="Tiêu đề" />
-      <input
-        v-model="settings.title"
-        type="text"
-        maxlength="80"
-        :placeholder="settings.mode === 'letters' ? 'Luyện viết chữ cái' : 'Luyện viết'"
-        class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      />
-    </div>
-  </SettingsSection>
 </template>

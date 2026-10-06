@@ -1,22 +1,30 @@
-// Trạng thái dùng chung: danh mục font, font đã nạp, các trang đã dựng từ cài đặt.
+// Trạng thái dùng chung: font đã nạp, lớp trang (lưới + chữ mẫu, dựng lại có trễ) và
+// lớp trang trí (dựng ngay, để kéo thả mượt). Khi xuất thì ghép hai lớp thành trang hoàn chỉnh.
 import { computed, ref, shallowRef, triggerRef, watch } from 'vue'
-import { fetchFontData, fontFromData, loadLabelFont, type LoadedFont } from './font-engine'
-import { BUNDLED_FONTS, DEFAULT_FONT_KEY, pathFontKey, type FontEntry } from './font-catalog'
+import { fetchFontData, fontFromData, type LoadedFont } from './font-engine'
+import { BUNDLED_FONTS, DEFAULT_FONT_KEY, LABEL_FONT_KEY, pathFontKey, type FontEntry } from './font-catalog'
 import { buildBlocks, computeGeometry, paginate } from './worksheet-layout'
-import { renderPageSvg } from './worksheet-svg'
-import { settings } from './worksheet-settings'
+import { renderBaseLayer } from './worksheet-svg'
+import { renderDecor } from './decor-svg'
+import { wrapPage } from './svg-glyphs'
+import { autoTitle, settings } from './worksheet-settings'
+import { decor } from './decor-settings'
+import { assets, restoreAssets } from './image-assets'
 import { listSystemFonts, readFontFile } from './backend'
+import { paperById } from './paper-presets'
 import type { PdfPage } from './pdf-export'
 
-export const labelFont = shallowRef<LoadedFont | null>(null)
 const loaded = shallowRef(new Map<string, LoadedFont>())
+const loading = new Map<string, Promise<void>>()
 export const systemFonts = shallowRef<FontEntry[]>([])
 export const addedFonts = shallowRef<FontEntry[]>(loadAddedFonts())
-export const pages = shallowRef<PdfPage[]>([])
+/** Lớp trang của từng trang (chưa bọc <svg>) */
+export const basePages = shallowRef<string[]>([])
 export const renderError = ref('')
 export const fontError = ref('')
 export const fontLoading = ref(false)
 const systemScanned = ref(false)
+export const ready = ref(false)
 
 const ADDED_KEY = 'renchu.addedFonts.v1'
 
@@ -39,12 +47,15 @@ function saveAddedFonts() {
 }
 
 export const allFonts = computed<FontEntry[]>(() => [...BUNDLED_FONTS, ...addedFonts.value, ...systemFonts.value])
-export const currentFontEntry = computed(
-  () => allFonts.value.find((f) => f.key === settings.fontKey) ?? BUNDLED_FONTS[0],
-)
-export const writingFont = computed<LoadedFont | null>(() => loaded.value.get(settings.fontKey) ?? null)
+export const fontEntry = (key: string) => allFonts.value.find((f) => f.key === key) ?? BUNDLED_FONTS[0]
+export const currentFontEntry = computed(() => fontEntry(settings.fontKey))
 
-/** Chữ tiếng Việt font đang chọn không có — để cảnh báo người dùng. */
+/** Font đã nạp theo khoá; chưa nạp xong thì tạm dùng font chữ in mặc định. */
+export function fontFor(key: string): LoadedFont | null {
+  return loaded.value.get(key) ?? loaded.value.get(LABEL_FONT_KEY) ?? null
+}
+
+export const writingFont = computed<LoadedFont | null>(() => loaded.value.get(settings.fontKey) ?? null)
 export const missingVietnamese = computed(() => writingFont.value?.missingVietnamese() ?? '')
 
 async function loadEntry(entry: FontEntry): Promise<LoadedFont> {
@@ -53,39 +64,56 @@ async function loadEntry(entry: FontEntry): Promise<LoadedFont> {
   throw new Error(`Font "${entry.name}" không còn trong phiên này, hãy thêm lại`)
 }
 
-/** Nạp font đang chọn (nếu chưa). Lỗi thì báo và quay về font mặc định. */
-async function ensureCurrentFont() {
-  const key = settings.fontKey
-  if (loaded.value.has(key)) return
+/** Nạp font (một lần). Trả về false nếu không nạp được. */
+async function ensureFont(key: string): Promise<boolean> {
+  if (loaded.value.has(key)) return true
   const entry = allFonts.value.find((f) => f.key === key)
-  if (!entry) {
-    // Font trên máy: chờ danh sách quét xong; còn lại (font đã gỡ, xoá) thì về mặc định
-    if (key.startsWith('file:') && !systemScanned.value) return
-    settings.fontKey = DEFAULT_FONT_KEY
-    return
+  if (!entry) return false
+  let p = loading.get(key)
+  if (!p) {
+    p = loadEntry(entry).then((font) => {
+      loaded.value.set(key, font)
+      triggerRef(loaded)
+    })
+    loading.set(key, p)
   }
   fontLoading.value = true
   try {
-    const font = await loadEntry(entry)
-    loaded.value.set(key, font)
-    triggerRef(loaded)
-    fontError.value = ''
+    await p
+    return true
   } catch (e) {
+    loading.delete(key)
     fontError.value = (e as Error).message
-    if (key !== DEFAULT_FONT_KEY) settings.fontKey = DEFAULT_FONT_KEY
+    return false
   } finally {
-    fontLoading.value = false
+    fontLoading.value = loading.size > loaded.value.size
+  }
+}
+
+/** Nạp mọi font đang dùng; font nào hỏng / mất thì về font mặc định của chỗ đó. */
+async function ensureUsedFonts() {
+  const slots: [string, (k: string) => void, string][] = [
+    [settings.fontKey, (k) => (settings.fontKey = k), DEFAULT_FONT_KEY],
+    [decor.title.fontKey, (k) => (decor.title.fontKey = k), LABEL_FONT_KEY],
+    [decor.fieldStyle.fontKey, (k) => (decor.fieldStyle.fontKey = k), LABEL_FONT_KEY],
+    [decor.watermark.fontKey, (k) => (decor.watermark.fontKey = k), LABEL_FONT_KEY],
+  ]
+  for (const [key, set, fallback] of slots) {
+    const known = allFonts.value.some((f) => f.key === key)
+    // Font trên máy: chờ quét xong danh sách rồi mới kết luận là mất
+    if (!known && key.startsWith('file:') && !systemScanned.value) continue
+    if (!(await ensureFont(key)) && key !== fallback) set(fallback)
   }
 }
 
 export async function initFonts() {
-  try {
-    labelFont.value = await loadLabelFont()
-  } catch (e) {
-    fontError.value = `Không nạp được font: ${(e as Error).message}`
+  if (!(await ensureFont(LABEL_FONT_KEY))) {
+    fontError.value = `Không nạp được font: ${fontError.value}`
     return
   }
-  await ensureCurrentFont()
+  ready.value = true
+  ensureUsedFonts()
+  restoreAssets([...decor.logos.map((l) => l.assetId), ...(decor.background.assetId ? [decor.background.assetId] : [])])
   listSystemFonts()
     .then((list) => {
       systemFonts.value = list.map((f) => ({ key: pathFontKey(f.path), name: f.name, path: f.path, group: 'tren-may' }))
@@ -93,14 +121,17 @@ export async function initFonts() {
     .catch(() => {})
     .finally(() => {
       systemScanned.value = true
-      ensureCurrentFont()
+      ensureUsedFonts()
     })
 }
 
-watch(() => settings.fontKey, ensureCurrentFont)
+watch(
+  () => [settings.fontKey, decor.title.fontKey, decor.fieldStyle.fontKey, decor.watermark.fontKey],
+  () => ready.value && ensureUsedFonts(),
+)
 
-/** Thêm font từ file người dùng chọn rồi dùng luôn làm chữ mẫu. */
-export function addFontFromFile(name: string, data: string | ArrayBuffer, path?: string) {
+/** Thêm font từ file người dùng chọn. Trả về khoá font để nơi gọi dùng luôn. */
+export function addFontFromFile(name: string, data: string | ArrayBuffer, path?: string): string {
   const key = path ? pathFontKey(path) : `upload:${name}:${Date.now()}`
   const font = fontFromData(key, name, data)
   loaded.value.set(key, font)
@@ -109,17 +140,49 @@ export function addFontFromFile(name: string, data: string | ArrayBuffer, path?:
     addedFonts.value = [...addedFonts.value, { key, name, path, group: 'da-them' }]
     saveAddedFonts()
   }
-  settings.fontKey = key
+  return key
 }
 
 export function removeAddedFont(key: string) {
   addedFonts.value = addedFonts.value.filter((f) => f.key !== key)
   saveAddedFonts()
   if (settings.fontKey === key) settings.fontKey = DEFAULT_FONT_KEY
+  for (const style of [decor.title, decor.fieldStyle, decor.watermark]) if (style.fontKey === key) style.fontKey = LABEL_FONT_KEY
+}
+
+/** Kích thước giấy hiện tại (mm). */
+export const pageSize = computed(() => {
+  const p = paperById(settings.paper)
+  return settings.landscape ? { width: p.height, height: p.width } : { width: p.width, height: p.height }
+})
+
+export const titleText = computed(() => decor.title.text.trim() || autoTitle(settings))
+
+/** Lớp trang trí, dựng ngay mỗi khi đổi (nhẹ: vài chữ và ảnh). */
+export const decorLayer = computed(() => {
+  void loaded.value // phụ thuộc: font nạp xong thì vẽ lại
+  return renderDecor(decor, {
+    ...pageSize.value,
+    showHeader: settings.showHeader,
+    titleText: titleText.value,
+    fontFor,
+    asset: (id) => assets.value.get(id),
+  })
+})
+
+/** Ghép lớp nền + lớp trang + lớp trang trí thành các trang hoàn chỉnh để xuất file. */
+export function composePages(): PdfPage[] {
+  const { width, height } = pageSize.value
+  const d = decorLayer.value
+  return basePages.value.map((inner, i) => ({
+    svg: wrapPage(width, height, [d.under, inner, d.over], { title: `${titleText.value} — trang ${i + 1}` }),
+    width,
+    height,
+  }))
 }
 
 function rebuild() {
-  const label = labelFont.value
+  const label = loaded.value.get(LABEL_FONT_KEY)
   const writing = writingFont.value
   if (!label || !writing) return
   try {
@@ -128,11 +191,9 @@ function rebuild() {
     const g = computeGeometry(settings, writing)
     if (!g.baselines.length) throw new Error('Khổ giấy quá nhỏ so với cỡ ô li, không còn dòng nào để viết')
     const models = paginate(g, buildBlocks(writing, g, settings))
-    pages.value = models.map((page, i) => ({
-      svg: renderPageSvg({ s: settings, g, page, pageIndex: i, pageCount: models.length, label, writing }),
-      width: g.width,
-      height: g.height,
-    }))
+    basePages.value = models.map((page, i) =>
+      renderBaseLayer({ s: settings, g, page, pageIndex: i, pageCount: models.length, label, writing }),
+    )
     renderError.value = ''
   } catch (e) {
     renderError.value = (e as Error).message
@@ -140,7 +201,7 @@ function rebuild() {
 }
 
 let timer: ReturnType<typeof setTimeout> | undefined
-watch([() => JSON.stringify(settings), labelFont, writingFont], () => {
+watch([() => JSON.stringify(settings), loaded, writingFont], () => {
   clearTimeout(timer)
   timer = setTimeout(rebuild, 90)
 })

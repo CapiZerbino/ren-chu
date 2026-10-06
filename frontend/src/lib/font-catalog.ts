@@ -12,6 +12,7 @@ import sriracha from '@/assets/fonts/Sriracha-Regular.ttf?url'
 import grandstander from '@/assets/fonts/Grandstander.ttf?url'
 import nunito from '@/assets/fonts/Nunito.ttf?url'
 import lexend from '@/assets/fonts/Lexend.ttf?url'
+import beVietnam from '@/assets/fonts/BeVietnamPro-Medium.ttf?url'
 
 export type FontGroup = 'noi-net' | 'chu-in' | 'da-them' | 'tren-may'
 export type WeightLevel = 'manh' | 'vua' | 'dam'
@@ -37,6 +38,8 @@ export interface FontEntry {
 }
 
 export const DEFAULT_FONT_KEY = 'playwrite'
+/** Font mặc định cho tiêu đề, ô thông tin, số trang */
+export const LABEL_FONT_KEY = 'bevietnam'
 
 export const BUNDLED_FONTS: FontEntry[] = [
   { key: 'playwrite', name: 'Playwrite Việt Nam', group: 'noi-net', hint: 'Giống mẫu chữ trường tiểu học', url: playwrite, weights: { manh: 200, vua: 300, dam: 400 } },
@@ -50,6 +53,7 @@ export const BUNDLED_FONTS: FontEntry[] = [
   { key: 'sriracha', name: 'Sriracha', group: 'chu-in', hint: 'Nghiêng, nét bút', url: sriracha },
   { key: 'grandstander', name: 'Grandstander', group: 'chu-in', hint: 'Vui nhộn cho bé nhỏ', url: grandstander, weights: { manh: 250, vua: 450, dam: 650 } },
   { key: 'nunito', name: 'Nunito', group: 'chu-in', hint: 'Chữ in đầu tròn, dễ đọc', url: nunito, weights: { manh: 300, vua: 500, dam: 700 } },
+  { key: 'bevietnam', name: 'Be Vietnam Pro', group: 'chu-in', hint: 'Chữ in rõ, hợp tiêu đề', url: beVietnam },
   { key: 'lexend', name: 'Lexend', group: 'chu-in', hint: 'Chữ in rõ, dễ đọc', url: lexend, weights: { manh: 250, vua: 400, dam: 550 } },
 ]
 

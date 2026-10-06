@@ -1,17 +1,9 @@
 <script setup lang="ts">
 // Ô chọn font chữ mẫu: font kèm sẵn (xem trước bằng chính font đó), font đã thêm,
-// font cài trên máy (tìm theo tên), thêm font từ file.
+// font cài trên máy (tìm theo tên), thêm font từ file. Dùng v-model = khoá font.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Check, ChevronDown, FilePlus2, Loader2, Search, X } from 'lucide-vue-next'
-import { settings } from '@/lib/worksheet-settings'
-import {
-  addFontFromFile,
-  addedFonts,
-  currentFontEntry,
-  fontLoading,
-  removeAddedFont,
-  systemFonts,
-} from '@/lib/worksheet-store'
+import { addFontFromFile, addedFonts, fontEntry, fontLoading, removeAddedFont, systemFonts } from '@/lib/worksheet-store'
 import {
   BUNDLED_FONTS,
   FONT_GROUP_LABELS,
@@ -23,7 +15,9 @@ import {
 import { isDesktop, pickFont } from '@/lib/backend'
 import { cn } from '@/lib/utils'
 
+const model = defineModel<string>({ required: true })
 const emit = defineEmits<{ error: [message: string] }>()
+const currentFontEntry = computed(() => fontEntry(model.value))
 
 const open = ref(false)
 const query = ref('')
@@ -61,7 +55,7 @@ async function toggle() {
 }
 
 function choose(f: FontEntry) {
-  settings.fontKey = f.key
+  model.value = f.key
   open.value = false
 }
 
@@ -69,7 +63,7 @@ async function addFromFile() {
   open.value = false
   try {
     const f = await pickFont()
-    if (f) addFontFromFile(f.name, f.data, f.path)
+    if (f) model.value = addFontFromFile(f.name, f.data, f.path)
   } catch (e) {
     emit('error', (e as Error).message || 'Không mở được font này')
   }
@@ -138,16 +132,16 @@ onBeforeUnmount(() => {
             v-for="f in g.items"
             :key="f.key"
             role="option"
-            :aria-selected="settings.fontKey === f.key"
+            :aria-selected="model === f.key"
             :class="
               cn(
                 'group flex cursor-pointer items-center gap-2 px-3 py-1.5 hover:bg-accent',
-                settings.fontKey === f.key && 'bg-primary/5',
+                model === f.key && 'bg-primary/5',
               )
             "
             @click="choose(f)"
           >
-            <Check class="h-3.5 w-3.5 shrink-0 text-primary" :class="settings.fontKey === f.key ? '' : 'invisible'" />
+            <Check class="h-3.5 w-3.5 shrink-0 text-primary" :class="model === f.key ? '' : 'invisible'" />
             <span class="min-w-0 flex-1">
               <span
                 v-if="isBundled(f)"

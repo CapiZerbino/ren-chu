@@ -7,9 +7,12 @@ import ContentSettings from '@/components/ContentSettings.vue'
 import PaperSettings from '@/components/PaperSettings.vue'
 import LetterStyleSettings from '@/components/LetterStyleSettings.vue'
 import WorksheetPreview from '@/components/WorksheetPreview.vue'
+import HeaderDecorSettings from '@/components/HeaderDecorSettings.vue'
+import ImageDecorSettings from '@/components/ImageDecorSettings.vue'
+import WatermarkSettings from '@/components/WatermarkSettings.vue'
 import ExportMenu from '@/components/ExportMenu.vue'
-import { initFonts, pages } from '@/lib/worksheet-store'
-import { effectiveTitle, resetSettings, settings } from '@/lib/worksheet-settings'
+import { basePages, composePages, initFonts, titleText } from '@/lib/worksheet-store'
+import { resetSettings } from '@/lib/worksheet-settings'
 import { buildPdf } from '@/lib/pdf-export'
 import { isDesktop, openPdfForPrint, saveExport } from '@/lib/backend'
 import { buildExport, formatInfo, type ExportFormat } from '@/lib/export-formats'
@@ -22,7 +25,7 @@ const progress = ref(0)
 const notice = ref<{ ok: boolean; text: string } | null>(null)
 let noticeTimer: ReturnType<typeof setTimeout> | undefined
 
-const pageCount = computed(() => pages.value.length)
+const pageCount = computed(() => basePages.value.length)
 
 function notify(ok: boolean, text: string) {
   notice.value = { ok, text }
@@ -36,8 +39,8 @@ async function exportFile(format: ExportFormat) {
   progress.value = 0
   try {
     const info = formatInfo(format)
-    const title = effectiveTitle(settings)
-    const files = await buildExport(format, pages.value, title, (n) => (progress.value = n))
+    const title = titleText.value
+    const files = await buildExport(format, composePages(), title, (n) => (progress.value = n))
     const where = await saveExport(files, info.filterName, info.ext, info.mime)
     if (where) {
       // Bản desktop trả về đường dẫn đã lưu; trình duyệt trả về "thư mục Tải về"
@@ -56,8 +59,8 @@ async function printPdf() {
   busy.value = 'print'
   progress.value = 0
   try {
-    const [pdf] = await buildExport('pdf', pages.value, effectiveTitle(settings), (n) => (progress.value = n))
-    await openPdfForPrint(pdf.data, effectiveTitle(settings))
+    const [pdf] = await buildExport('pdf', composePages(), titleText.value, (n) => (progress.value = n))
+    await openPdfForPrint(pdf.data, titleText.value)
     notify(true, `Đã mở file PDF — bấm ${isMac ? '⌘P' : 'Ctrl+P'} để in, nhớ chọn tỉ lệ 100%`)
   } catch (e) {
     notify(false, `Không tạo được PDF: ${(e as Error).message}`)
@@ -98,6 +101,9 @@ async function printPdf() {
           <ContentSettings />
           <LetterStyleSettings />
           <PaperSettings />
+          <HeaderDecorSettings />
+          <ImageDecorSettings />
+          <WatermarkSettings />
         </div>
         <div class="border-t px-5 py-2.5">
           <button

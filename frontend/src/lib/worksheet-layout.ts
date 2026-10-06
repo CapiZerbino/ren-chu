@@ -7,7 +7,6 @@ import type { WorksheetSettings } from './worksheet-settings'
 
 /** Vở ô li Việt Nam: mỗi dòng kẻ đậm cách nhau 4 ô li. */
 export const O_LI_PER_UNIT = 4
-const HEADER_MM = 21
 const FOOTER_MM = 7
 
 export type InkKind = 'solid' | 'trace'
@@ -53,7 +52,7 @@ export function computeGeometry(s: WorksheetSettings, font: LoadedFont): Geometr
   const margin = s.marginMm
   const oLi = s.oLiMm
   const unit = oLi * O_LI_PER_UNIT
-  const headerH = s.showHeader ? HEADER_MM : 0
+  const headerH = s.headerHeightMm
   const footerH = s.showPageNumber ? FOOTER_MM : 0
 
   const gridLeft = margin

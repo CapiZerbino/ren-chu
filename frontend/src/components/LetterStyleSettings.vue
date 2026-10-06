@@ -34,7 +34,7 @@ const pickerError = ref('')
   <SettingsSection title="Chữ mẫu">
     <div>
       <FieldLabel label="Font chữ" />
-      <FontPicker @error="pickerError = $event" />
+      <FontPicker v-model="settings.fontKey" @error="pickerError = $event" />
       <p v-if="pickerError || fontError" class="mt-1 text-xs text-destructive">{{ pickerError || fontError }}</p>
       <p v-else-if="missingVietnamese" class="mt-1.5 flex gap-1.5 text-xs text-amber-700 dark:text-amber-400">
         <AlertTriangle class="mt-px h-3.5 w-3.5 shrink-0" />

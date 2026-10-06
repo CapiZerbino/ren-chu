@@ -41,7 +41,8 @@ export interface WorksheetSettings {
   traceStyle: TraceStyle
   // Trang
   showHeader: boolean
-  title: string
+  /** Khoảng trống đầu trang (mm) dành cho tiêu đề, ô thông tin, logo */
+  headerHeightMm: number
   showPageNumber: boolean
 }
 
@@ -68,7 +69,7 @@ export const DEFAULT_SETTINGS: WorksheetSettings = {
   ink: 'xanh',
   traceStyle: 'mo',
   showHeader: true,
-  title: '',
+  headerHeightMm: 21,
   showPageNumber: true,
 }
 
@@ -83,6 +84,9 @@ function loadSaved(): Partial<WorksheetSettings> {
       const n = saved.weight as number
       saved.weight = n <= 200 ? 'manh' : n >= 400 ? 'dam' : 'vua'
     }
+    // Bản 0.1.0: tắt đầu trang thì không chừa khoảng trống
+    if (saved.showHeader === false && saved.headerHeightMm === undefined) saved.headerHeightMm = 0
+    delete (saved as { title?: string }).title
     return saved
   } catch {
     return {}
@@ -108,8 +112,7 @@ export function resetSettings() {
   Object.assign(settings, DEFAULT_SETTINGS)
 }
 
-/** Tiêu đề mặc định theo nội dung khi người dùng để trống. */
-export function effectiveTitle(s: WorksheetSettings): string {
-  if (s.title.trim()) return s.title.trim()
+/** Tiêu đề tự đặt theo nội dung khi người dùng để trống. */
+export function autoTitle(s: WorksheetSettings): string {
   return s.mode === 'letters' ? 'Luyện viết chữ cái' : 'Luyện viết'
 }
