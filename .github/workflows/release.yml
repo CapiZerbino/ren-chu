@@ -1,0 +1,165 @@
+name: Release
+
+# Gắn thẻ vX.Y.Z (hoặc vX.Y.Z-beta.N) → build macOS (universal), Windows, Linux,
+# đóng gói (.dmg · bộ cài .exe + .zip chạy ngay · .tar.gz), SHA256SUMS và tạo GitHub
+# Release. Run workflow (workflow_dispatch) → chỉ build thử, tải ở mục Artifacts.
+# Chưa ký số Apple/Windows (chưa có chứng chỉ). Mọi action ghim theo SHA commit.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  meta:
+    name: Phiên bản
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - id: v
+        env:
+          REF: ${{ github.ref }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [[ "$REF" == refs/tags/v* ]]; then
+            version="${REF_NAME#v}"
+            if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "::error::thẻ '$REF_NAME' không đúng dạng vX.Y.Z"; exit 1
+            fi
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            version="0.0.0-dev.${SHA::7}"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: meta
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-14, target: macos, platform: darwin/universal }
+          - { os: windows-latest, target: windows, platform: windows/amd64 }
+          - { os: ubuntu-22.04, target: linux, platform: linux/amd64 }
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+      OUT: release-files
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Thư viện GTK/WebKit (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends libgtk-3-dev libwebkit2gtk-4.1-dev pkg-config
+      - name: NSIS (Windows, tạo bộ cài)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $nsis = Join-Path ${env:ProgramFiles(x86)} 'NSIS'
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
+            if (-not (Test-Path (Join-Path $nsis 'makensis.exe'))) { choco install nsis -y --no-progress }
+            Add-Content -Path $env:GITHUB_PATH -Value $nsis
+          }
+
+      - name: Wails CLI (đúng phiên bản trong go.mod)
+        run: |
+          wv="$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v2)"
+          go install "github.com/wailsapp/wails/v2/cmd/wails@$wv"
+          wails version
+
+      - name: Ghi phiên bản vào wails.json
+        run: node -e "const f='wails.json',j=require('./'+f);j.info.productVersion=process.env.VERSION.replace(/-.*/,'');require('fs').writeFileSync(f,JSON.stringify(j,null,2))"
+
+      - name: Build
+        run: |
+          flags=(-clean -trimpath -skipbindings -platform "${{ matrix.platform }}")
+          [[ "${{ runner.os }}" == Linux ]] && flags+=(-tags webkit2_41)
+          [[ "${{ runner.os }}" == Windows ]] && flags+=(-nsis)
+          wails build "${flags[@]}"
+
+      - name: Đóng gói
+        run: |
+          mkdir -p "$OUT"
+          bin=build/bin
+          case "${{ matrix.target }}" in
+            macos)
+              stage="$RUNNER_TEMP/dmg"
+              mkdir -p "$stage"
+              cp -R "$bin"/*.app "$stage/"
+              ln -s /Applications "$stage/Applications"
+              hdiutil create -volname "Rèn Chữ" -srcfolder "$stage" -ov -format UDZO "$OUT/RenChu-$VERSION-macos-universal.dmg"
+              ;;
+            windows)
+              cp "$bin"/*installer.exe "$OUT/RenChu-$VERSION-windows-amd64-setup.exe"
+              7z a -tzip "$OUT/RenChu-$VERSION-windows-amd64-portable.zip" "./$bin/RenChu.exe" >/dev/null
+              ;;
+            linux)
+              tar -C "$bin" -czf "$OUT/RenChu-$VERSION-linux-amd64.tar.gz" RenChu
+              ;;
+          esac
+          ls -la "$OUT"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: renchu-${{ matrix.target }}
+          path: release-files/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: GitHub Release
+    needs: [meta, build]
+    if: needs.meta.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: renchu-*
+          path: release-files
+          merge-multiple: true
+      - name: SHA256SUMS
+        working-directory: release-files
+        run: sha256sum RenChu-* > SHA256SUMS && cat SHA256SUMS
+      - name: Tạo release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          sed "s/{{VERSION}}/$VERSION/g" .github/release-notes.md > "$RUNNER_TEMP/notes.md"
+          # Đoạn của phiên bản này trong CHANGELOG.md
+          awk -v v="$VERSION" '/^## /{f=($2==v); next} f' CHANGELOG.md >> "$RUNNER_TEMP/notes.md"
+          flags=(--verify-tag --title "Rèn Chữ $VERSION" --notes-file "$RUNNER_TEMP/notes.md")
+          [[ "$VERSION" == *-* ]] && flags+=(--prerelease)
+          gh release create "$TAG" "${flags[@]}" release-files/*

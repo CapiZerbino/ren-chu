@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Token màu (shadcn-vue). Accent = tím mực vở ô li Việt Nam: HSL 265 52% 42%.
+ * Không hard-code màu ở component — luôn qua token. Màu dòng kẻ trên trang in
+ * nằm riêng ở lib/paper-presets.ts (đó là màu của giấy, không phải giao diện). */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 12%;
+    --primary: 265 52% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 260 30% 96.5%;
+    --secondary-foreground: 240 10% 12%;
+    --muted: 260 25% 96.5%;
+    --muted-foreground: 245 8% 46%;
+    --accent: 260 30% 95%;
+    --accent-foreground: 240 10% 12%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 255 20% 90%;
+    --input: 255 20% 88%;
+    --ring: 265 52% 42%;
+    --desk: 255 18% 93%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 250 20% 7%;
+    --foreground: 250 20% 97%;
+    --card: 250 20% 9%;
+    --card-foreground: 250 20% 97%;
+    --popover: 250 20% 9%;
+    --popover-foreground: 250 20% 97%;
+    --primary: 265 70% 68%;
+    --primary-foreground: 250 30% 10%;
+    --secondary: 250 15% 16%;
+    --secondary-foreground: 250 20% 97%;
+    --muted: 250 15% 16%;
+    --muted-foreground: 250 10% 66%;
+    --accent: 250 15% 18%;
+    --accent-foreground: 250 20% 97%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 250 15% 18%;
+    --input: 250 15% 22%;
+    --ring: 265 70% 68%;
+    --desk: 250 18% 12%;
+  }
+
+  * {
+    @apply border-border;
+  }
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: Inter, 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+  input,
+  textarea {
+    user-select: text;
+  }
+}
+
+/* Font chữ mẫu dùng cho ô chọn chữ cái và logo (trang in vẽ bằng path, không dùng @font-face). */
+@font-face {
+  font-family: 'Playwrite VN';
+  src: url('./assets/fonts/PlaywriteVN.ttf') format('truetype');
+  font-weight: 100 400;
+  font-display: swap;
+}
+
+@layer utilities {
+  .font-hand {
+    font-family: 'Playwrite VN', cursive;
+  }
+}

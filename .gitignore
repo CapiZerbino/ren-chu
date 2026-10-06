@@ -1,0 +1,7 @@
+node_modules/
+frontend/wailsjs/
+.DS_Store
+build/bin/
+frontend/dist/*
+!frontend/dist/gitkeep
+frontend/package.json.md5
